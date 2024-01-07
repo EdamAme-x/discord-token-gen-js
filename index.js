@@ -73,9 +73,15 @@ new Promise(async (resolve, reject) => {
       await page.click(
         "#root > div > div.page--bulk--emails.mt-lg-5 > div > div > div.col-lg-6.col-md-10 > div.card > div > button"
       );
-      await page.waitForSelector(
-        `#root > div > div.page--bulk--emails.mt-lg-5 > div > div > div.col-lg-6.col-md-10 > div.col-12.text-center.mt-2 > div:nth-child(1) > a`
-      );
+      try {
+        await page.waitForSelector(
+          `#root > div > div.page--bulk--emails.mt-lg-5 > div > div > div.col-lg-6.col-md-10 > div.col-12.text-center.mt-2 > div:nth-child(1) > a`,
+          { timeout: 5000 }
+        );
+      } catch (error) {
+        console.error("Selector not found within the specified timeout.");
+        // Handle the error or retry the operation.
+      }
       emails = await page.evaluate(() => {
         const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
         const text = document.body.innerText;
@@ -272,22 +278,28 @@ new Promise(async (resolve, reject) => {
       } catch (e) {}
 
       const token = await page.evaluate(() => {
-        return window.webpackChunkdiscord_app.push([
-          [Math.random()],
-          {},
-          (req) => {
-            for (const m of Object.keys(req.c)
-              .map((x) => req.c[x].exports)
-              .filter((x) => x)) {
-              if (m.default && m.default.getToken !== undefined) {
-                return m.default.getToken();
+        if (window.webpackChunkdiscord_app) {
+          return window.webpackChunkdiscord_app.push([
+            [Math.random()],
+            {},
+            (req) => {
+              for (const m of Object.keys(req.c)
+                .map((x) => req.c[x].exports)
+                .filter((x) => x)) {
+                if (m.default && m.default.getToken !== undefined) {
+                  return m.default.getToken();
+                }
+                if (m.getToken !== undefined) {
+                  return m.getToken();
+                }
               }
-              if (m.getToken !== undefined) {
-                return m.getToken();
-              }
-            }
-          },
-        ]);
+            },
+          ]);
+        } else {
+          console.error('webpackChunkdiscord_app is undefined');
+          // Handle the error or return a default value.
+          return null; // or some default value
+        }
       });
 
       console.log("Generated Token: " + token);
